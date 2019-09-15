@@ -21,7 +21,7 @@ class MusicController extends Actor{
   }
 }
 
-//Music Player Mesaages
+//Music Player Messages
 object MusicPlayer {
   sealed trait PlayMessage
   case object StopMusic extends PlayMessage
