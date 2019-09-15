@@ -7,6 +7,8 @@ import lets.start.talkingtoactor.Storage.AddUser
 import akka.pattern.ask
 import akka.util.Timeout
 
+import scala.concurrent.duration._
+
 case class User(name: String, email: String)
 
 object Recorder {
@@ -16,6 +18,9 @@ object Recorder {
   //Recorder message
   case class NewUser(user: User) extends RecorderMessage
 
+  def props(checker: ActorRef, storage: ActorRef): Props = {
+    Props(new Recorder(checker, storage))
+  }
 }
 
 object Checker {
@@ -39,7 +44,7 @@ object Storage {
   sealed trait StorageMessage
 
   //Storage message
-  case class AddUser(user: User) extends StorageMessage
+  case class  AddUser(user: User) extends StorageMessage
 
 }
 
@@ -58,12 +63,13 @@ class Checker extends Actor {
 
   val blackList = List("shiv")
 
+  println("black list")
   def receive: Receive = {
-    case CheckUser(user) if blackList.contains(user) =>
+    case CheckUser(user) if blackList.contains(user.name) => println("res: " + blackList.contains(user.name))
       println(s"User: $user in blackList")
       sender() ! BlackUser
 
-    case CheckUser(user) =>
+    case CheckUser(user) => println("res: " + blackList.contains(user.name))
       println(s"User: $user not in blacklist")
       sender() ! WhiteUser
   }
@@ -73,8 +79,9 @@ class Recorder(checker: ActorRef, storage: ActorRef) extends Actor {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  implicit val timeout: Timeout = Timeout(5 seconds)
   def receive: Receive = {
-    case NewUser(user) =>
+    case NewUser(u) => println("user:: " + u)
       checker ? CheckUser map {
         case WhiteUser(user) =>
           storage ! AddUser(user)
